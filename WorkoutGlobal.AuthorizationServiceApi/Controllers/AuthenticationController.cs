@@ -15,24 +15,24 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
     [Produces("application/json")]
     public class AuthenticationController : ControllerBase
     {
-        private IAuthenticationRepository _authenticationRepository;
+        private IRepositoryManager _repositoryManager;
 
         /// <summary>
         /// Ctor for authentication controller.
         /// </summary>
-        /// <param name="authenticationRepository">Repository authentication instance.</param>
-        public AuthenticationController(IAuthenticationRepository authenticationRepository)
+        /// <param name="repositoryManager">Repository manager instance.</param>
+        public AuthenticationController(IRepositoryManager repositoryManager)
         {
-            AuthenticationRepository = authenticationRepository;
+            RepositoryManager = repositoryManager;
         }
 
         /// <summary>
         /// Authentication repository property.
         /// </summary>
-        public IAuthenticationRepository AuthenticationRepository
+        public IRepositoryManager RepositoryManager
         {
-            get => _authenticationRepository;
-            private set => _authenticationRepository = value ?? throw new NullReferenceException(nameof(value));
+            get => _repositoryManager;
+            private set => _repositoryManager = value ?? throw new NullReferenceException(nameof(value));
         }
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Authenticate([FromBody] UserAuthorizationDto userAuthorizationDto)
         {
-            var isUserValid = await AuthenticationRepository.ValidateUserAsync(userAuthorizationDto);
+            var isUserValid = await RepositoryManager.AuthenticationRepository.ValidateUserAsync(userAuthorizationDto);
 
             if (!isUserValid)
                 return Unauthorized(new ErrorDetails()
@@ -63,7 +63,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                         "entered data contains invalid syntax (validation rules were violated)."
                 });
 
-            var token = AuthenticationRepository.CreateToken(userAuthorizationDto);
+            var token = RepositoryManager.AuthenticationRepository.CreateToken(userAuthorizationDto);
 
             return Ok(token);
         }
@@ -83,7 +83,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Registrate([FromBody] UserRegistrationDto userRegistrationDto)
         {
-            var isUserExisted = AuthenticationRepository.IsUserExisted(userRegistrationDto);
+            var isUserExisted = RepositoryManager.AuthenticationRepository.IsUserExisted(userRegistrationDto);
 
             if (isUserExisted)
                 return Unauthorized(new ErrorDetails()
@@ -93,12 +93,42 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                     Details = new StackTrace().ToString()
                 });
 
-            var userId = await AuthenticationRepository.RegistrateUserAsync(userRegistrationDto);
+            var userId = await RepositoryManager.AuthenticationRepository.RegistrateUserAsync(userRegistrationDto);
 
             return Created($"api/userCredentials/{userId}", userId);
         }
 
-        
+        /// <summary>
+        /// Purge databse after tests.
+        /// </summary>
+        /// <param name="userCredentialsId">Deletion user credential id.</param>
+        /// <returns></returns>
+        /// <response code="204">User was successfully deleted.</response>
+        /// <response code="404">User credential with given id not found.</response>
+        /// <response code="500">Something going wrong on server.</response>
+        [HttpDelete("purge/{userCredentialsId}")]
+        [ApiExplorerSettings(IgnoreApi = true)]
+        [ProducesResponseType(statusCode: StatusCodes.Status204NoContent)]
+        [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status404NotFound)]
+        [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> Purge(string userCredentialsId)
+        {
+            var userCredentials = await RepositoryManager.UserCredentialRepository.GetUserCredentialAsync(userCredentialsId);
 
+            if (userCredentials == null)
+                return NotFound(new ErrorDetails()
+                {
+                    StatusCode = StatusCodes.Status404NotFound,
+                    Message = "User don't exists.",
+                    Details = new StackTrace().ToString()
+                });
+
+            var userAccount = await RepositoryManager.UserCredentialRepository.GetUserCredentialAccountAsync(userCredentialsId);
+            await RepositoryManager.UserAccountRepository.DeleteAccountAsync(userAccount);
+
+            await RepositoryManager.UserCredentialRepository.DeleteUserCredentialAsync(userCredentials);
+
+            return NoContent();
+        }
     }
 }

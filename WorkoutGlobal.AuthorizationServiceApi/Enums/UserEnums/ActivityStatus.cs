@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace WorkoutGlobal.AuthorizationServiceApi.Models.Enums
+namespace WorkoutGlobal.AuthorizationServiceApi.Enums
 {
     /// <summary>
     /// Represents user sport activity in life.
