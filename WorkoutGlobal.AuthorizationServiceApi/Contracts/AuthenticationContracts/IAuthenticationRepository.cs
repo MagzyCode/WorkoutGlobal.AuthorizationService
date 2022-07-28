@@ -1,5 +1,5 @@
 ﻿using WorkoutGlobal.AuthorizationServiceApi.Models;
-using WorkoutGlobal.AuthorizationServiceApi.Models.Dto;
+using WorkoutGlobal.AuthorizationServiceApi.Dtos;
 
 namespace WorkoutGlobal.AuthorizationServiceApi.Contracts
 {
@@ -44,13 +44,5 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Contracts
         /// <param name="password">User password.</param>
         /// <returns>User credentials with generated info.</returns>
         public Task<UserCredential> GenerateUserCredentialsAsync(DefaultRegistrationInfoDto defaultRegistrationInfoDto, string password);
-
-        /// <summary>
-        /// Generates a hash of the password based on the password and secret key.
-        /// </summary>
-        /// <param name="password">Hashed password.</param>
-        /// <param name="salt">Secret key.</param>
-        /// <returns></returns>
-        public Task<string> GenerateHashPasswordAsync(string password, string salt);
     }
 }

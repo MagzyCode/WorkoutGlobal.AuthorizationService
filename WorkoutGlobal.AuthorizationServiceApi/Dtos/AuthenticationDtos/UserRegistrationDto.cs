@@ -1,6 +1,6 @@
 ﻿using WorkoutGlobal.AuthorizationServiceApi.Enums;
 
-namespace WorkoutGlobal.AuthorizationServiceApi.Models.Dto
+namespace WorkoutGlobal.AuthorizationServiceApi.Dtos
 {
     /// <summary>
     /// Represents DTO model for user registration.

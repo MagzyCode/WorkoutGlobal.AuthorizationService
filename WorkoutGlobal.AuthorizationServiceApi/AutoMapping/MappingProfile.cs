@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
+using WorkoutGlobal.AuthorizationServiceApi.Dtos;
 using WorkoutGlobal.AuthorizationServiceApi.Models;
-using WorkoutGlobal.AuthorizationServiceApi.Models.Dto;
 
 namespace WorkoutGlobal.AuthorizationServiceApi.AutoMapping
 {
@@ -19,6 +19,10 @@ namespace WorkoutGlobal.AuthorizationServiceApi.AutoMapping
             CreateMap<UserRegistrationDto, DefaultRegistrationInfoDto>();
 
             CreateMap<UserRegistrationDto, UserAccount>();
+
+            CreateMap<UserCredentialDto, UserCredential>().ReverseMap();
+
+            CreateMap<UserAccount, UserAccountDto>().ReverseMap();
         }
     }
 }

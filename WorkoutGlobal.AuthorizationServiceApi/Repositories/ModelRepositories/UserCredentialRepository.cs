@@ -139,7 +139,8 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
 
             var userRoleIds = Context.UserRoles
                 .Where(x => x.UserId == id)
-                .Select(x => x.RoleId);
+                .Select(x => x.RoleId)
+                .ToList();
 
             foreach (var roleId in userRoleIds)
             {

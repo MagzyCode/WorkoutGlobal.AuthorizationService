@@ -1,10 +1,15 @@
-﻿namespace WorkoutGlobal.AuthorizationServiceApi.Models.Dto
+﻿namespace WorkoutGlobal.AuthorizationServiceApi.Dtos
 {
     /// <summary>
-    /// Represents DTO model what helps generate authentication info.
+    /// User credential DTO model for GET method.
     /// </summary>
-    public class DefaultRegistrationInfoDto
+    public class UserCredentialDto
     {
+        /// <summary>
+        /// Unique idetifier.
+        /// </summary>
+        public string Id { get; set; }
+
         /// <summary>
         /// User name in system.
         /// </summary>

@@ -8,7 +8,7 @@ using System.Text;
 using WorkoutGlobal.AuthorizationServiceApi.Contracts;
 using WorkoutGlobal.AuthorizationServiceApi.DbContext;
 using WorkoutGlobal.AuthorizationServiceApi.Models;
-using WorkoutGlobal.AuthorizationServiceApi.Models.Dto;
+using WorkoutGlobal.AuthorizationServiceApi.Dtos;
 
 namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
 {
@@ -44,7 +44,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         public UserManager<UserCredential> IdentityUserManager
         {
             get => _userManager;
-            private set => _userManager = value ?? throw new ArgumentNullException(nameof(value), "User manager cannot be null.");
+            private set => _userManager = value;
         }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         public IMapper Mapper 
         { 
             get => _mapper;
-            set => _mapper = value ?? throw new ArgumentNullException(nameof(value), "AutoMapper instance cannot be null.");
+            set => _mapper = value;
         }
 
         /// <summary>
@@ -75,30 +75,6 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
                 : string.Empty;
 
             return token;
-        }
-
-        /// <summary>
-        /// Generation of password hash base on password and secret salt.
-        /// </summary>
-        /// <param name="password">User password.</param>
-        /// <param name="salt">Secret key.</param>
-        /// <returns>Returns hashed password.</returns>
-        /// <exception cref="ArgumentNullException">Throws if anyone of params are null.</exception>
-        public async Task<string> GenerateHashPasswordAsync(string password, string salt)
-        {
-            if (password is null)
-                throw new ArgumentNullException(nameof(password), "Password cannot be null.");
-
-            if (salt is null)
-                throw new ArgumentNullException(nameof(salt), "Salt cannot be null.");
-
-            using var sha256 = SHA256.Create();
-            var hashedBytes = await sha256.ComputeHashAsync(
-                inputStream: new MemoryStream(Encoding.UTF8.GetBytes(password + salt)));
-
-            var hashPassword = ConvertByteArrayToString(hashedBytes);
-
-            return hashPassword;
         }
 
         /// <summary>
@@ -190,6 +166,30 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
             var userPasswordHash = await GenerateHashPasswordAsync(userAuthorizationDto.Password, userCredentials.PasswordSalt);
             
             return userCredentials is not null && userCredentials.PasswordHash == userPasswordHash;
+        }
+
+        /// <summary>
+        /// Generation of password hash base on password and secret salt.
+        /// </summary>
+        /// <param name="password">User password.</param>
+        /// <param name="salt">Secret key.</param>
+        /// <returns>Returns hashed password.</returns>
+        /// <exception cref="ArgumentNullException">Throws if anyone of params are null.</exception>
+        private static async Task<string> GenerateHashPasswordAsync(string password, string salt)
+        {
+            if (password is null)
+                throw new ArgumentNullException(nameof(password), "Password cannot be null.");
+
+            if (salt is null)
+                throw new ArgumentNullException(nameof(salt), "Salt cannot be null.");
+
+            using var sha256 = SHA256.Create();
+            var hashedBytes = await sha256.ComputeHashAsync(
+                inputStream: new MemoryStream(Encoding.UTF8.GetBytes(password + salt)));
+
+            var hashPassword = ConvertByteArrayToString(hashedBytes);
+
+            return hashPassword;
         }
 
         /// <summary>

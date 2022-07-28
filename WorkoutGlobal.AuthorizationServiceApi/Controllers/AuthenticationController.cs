@@ -3,7 +3,7 @@ using System.Diagnostics;
 using WorkoutGlobal.AuthorizationServiceApi.Contracts;
 using WorkoutGlobal.AuthorizationServiceApi.Filters;
 using WorkoutGlobal.AuthorizationServiceApi.Models;
-using WorkoutGlobal.AuthorizationServiceApi.Models.Dto;
+using WorkoutGlobal.AuthorizationServiceApi.Dtos;
 
 namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
 {
@@ -27,7 +27,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         }
 
         /// <summary>
-        /// Authentication repository property.
+        /// Repository manager.
         /// </summary>
         public IRepositoryManager RepositoryManager
         {
@@ -73,12 +73,12 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         /// </summary>
         /// <param name="userRegistrationDto"></param>
         /// <returns>If user already exists in system return BadRequest status with error model, if don't exists return Created status.</returns>
-        /// <response code="200">User was successfully registered.</response>
+        /// <response code="201">User was successfully registered.</response>
         /// <response code="400">Incoming model already exists in system.</response>
         /// <response code="500">Something going wrong on server.</response>
         [HttpPost("registration")]
         [ModelValidationFilter]
-        [ProducesResponseType(statusCode: StatusCodes.Status201Created)]
+        [ProducesResponseType(type: typeof(string), statusCode: StatusCodes.Status201Created)]
         [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status400BadRequest)]
         [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Registrate([FromBody] UserRegistrationDto userRegistrationDto)
@@ -115,7 +115,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         {
             var userCredentials = await RepositoryManager.UserCredentialRepository.GetUserCredentialAsync(userCredentialsId);
 
-            if (userCredentials == null)
+            if (userCredentials is null)
                 return NotFound(new ErrorDetails()
                 {
                     StatusCode = StatusCodes.Status404NotFound,
