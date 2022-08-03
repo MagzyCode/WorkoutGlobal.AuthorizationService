@@ -52,21 +52,21 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Migrations
                         new
                         {
                             Id = "f4a4ce79-c6b3-4e12-9c98-ff07b5030752",
-                            ConcurrencyStamp = "22310fe2-1d45-484a-8ca2-a88397289cbf",
+                            ConcurrencyStamp = "ee29b82c-e9ce-45a6-84c6-204e9a4f14da",
                             Name = "User",
                             NormalizedName = "USER"
                         },
                         new
                         {
                             Id = "6abe6f33-ae4b-4430-8f14-493dc9a5a9d1",
-                            ConcurrencyStamp = "257bb93d-e821-43fa-adcb-379c9fa2b51a",
+                            ConcurrencyStamp = "113a8721-bf72-4ddb-b99a-0bd8565c127b",
                             Name = "Admin",
                             NormalizedName = "ADMIN"
                         },
                         new
                         {
                             Id = "4f4d7080-beee-4a97-be65-2ffccde5eb72",
-                            ConcurrencyStamp = "fc368376-5b5d-4fd4-8c87-5f46744d14bd",
+                            ConcurrencyStamp = "eb723b72-5e2f-43dc-a176-bc8a1cc0ef62",
                             Name = "Trainer",
                             NormalizedName = "TRAINER"
                         });
@@ -243,7 +243,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Migrations
                         {
                             Id = new Guid("07d1a783-adf7-4dcc-aa35-53abd353152d"),
                             DateOfBirth = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            DateOfRegistration = new DateTime(2022, 7, 20, 16, 50, 6, 592, DateTimeKind.Local).AddTicks(9194),
+                            DateOfRegistration = new DateTime(2022, 7, 27, 18, 59, 16, 503, DateTimeKind.Local).AddTicks(8720),
                             FirstName = "Admin",
                             IsStatusVerify = false,
                             LastName = "Admin",
@@ -266,6 +266,9 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Migrations
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("Deleted")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -327,13 +330,13 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Migrations
                         {
                             Id = "b5b84fd7-5366-44eb-9d1b-408c6a4a8926",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "6dbfb65c-358e-4f37-b1fe-a022a727a8b7",
+                            ConcurrencyStamp = "ecd0d8f7-a58e-49f4-b552-50b7e6573cc2",
                             EmailConfirmed = false,
                             LockoutEnabled = false,
                             PasswordHash = "21c9b9e74e5071de6d6c872ccae5af4deb3b42563cd649a3179a5780163b6238",
                             PasswordSalt = "46da4fb783d806ab",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "ff824c15-11fc-4daa-9f21-e6c5b096d912",
+                            SecurityStamp = "9461a8c1-622f-4a71-bbde-4020e0fb1460",
                             TwoFactorEnabled = false,
                             UserName = "MagzyCode"
                         });

@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Models\Dto\UserCredentialDtos\" />
+    <Folder Include="Models\Dto\" />
   </ItemGroup>
 
 </Project>

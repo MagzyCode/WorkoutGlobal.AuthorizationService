@@ -1,11 +1,11 @@
 ﻿using WorkoutGlobal.AuthorizationServiceApi.Enums;
 
-namespace WorkoutGlobal.AuthorizationServiceApi.Models
+namespace WorkoutGlobal.AuthorizationServiceApi.Dtos
 {
     /// <summary>
-    /// Represents user account model.
+    /// Represents user account DTO model for GET method.
     /// </summary>
-    public class UserAccount
+    public class UserAccountDto
     {
         /// <summary>
         /// User account unique identifier. 
@@ -60,7 +60,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Models
         /// <summary>
         /// Registration date for user in system. 
         /// </summary>
-        public DateTime DateOfRegistration { get; set; } = DateTime.Now;
+        public DateTime DateOfRegistration { get; set; }
 
         /// <summary>
         /// Trainer official classification number.
@@ -76,10 +76,5 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Models
         /// Foreign key with user credentials model.
         /// </summary>
         public string UserCredentialsId { get; set; }
-
-        /// <summary>
-        /// Foreign model with user credentials model.
-        /// </summary>
-        public UserCredential UserCredential { get; set; }
     }
 }

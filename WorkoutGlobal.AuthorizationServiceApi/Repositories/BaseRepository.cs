@@ -30,7 +30,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         public AutorizationServiceContext Context
         {
             get => _context;
-            private set => _context = value ?? throw new NullReferenceException("Database context cannot be null.");
+            private set => _context = value;
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         public IConfiguration Configuration
         {
             get => _configuration;
-            private set => _configuration = value ?? throw new NullReferenceException("Configuration cannot be null.");
+            private set => _configuration = value;
         }
 
         /// <summary>

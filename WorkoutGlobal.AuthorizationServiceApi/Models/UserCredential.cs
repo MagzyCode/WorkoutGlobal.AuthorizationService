@@ -13,6 +13,11 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Models
         public string PasswordSalt { get; set; }
 
         /// <summary>
+        /// Mark for deleted users.
+        /// </summary>
+        public DateTime? Deleted { get; set; } 
+
+        /// <summary>
         /// Foreign model with account user.
         /// </summary>
         public UserAccount User { get; set; }

@@ -55,6 +55,10 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Extensions
         public static void ConfigureRepositories(this IServiceCollection services)
         {
             services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
+            services.AddScoped<IUserAccountRepository, UserAccountRepository>();
+            services.AddScoped<IUserCredentialRepository, UserCredentialRepository>();
+
+            services.AddScoped<IRepositoryManager, RepositoryManager>();
         }
     }
 }
