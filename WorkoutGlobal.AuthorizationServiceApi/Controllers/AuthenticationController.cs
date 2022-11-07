@@ -64,8 +64,14 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                 });
 
             var token = RepositoryManager.AuthenticationRepository.CreateToken(userAuthorizationDto);
+            var (refreshToken, expirationTime) = await RepositoryManager.AuthenticationRepository.RegisterRefreshToken(userAuthorizationDto.UserName);
 
-            return Ok(token);
+            return Ok(new
+            {
+                AccessToken = token,
+                RefreshToken = refreshToken,
+                RefreshTokenExpirationTime = expirationTime
+            });
         }
 
         /// <summary>
@@ -97,6 +103,50 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
 
             return Created($"api/userCredentials/{userId}", userId);
         }
+
+        /// <summary>
+        /// Refresh token for continue working with private resourses.
+        /// </summary>
+        /// <param name="userCredentialsId">User credential id.</param>
+        /// <returns>Refresh token and it's expiration time.</returns>
+        /// <response code="201">User was successfully registered.</response>
+        /// <response code="400">Incoming model already exists in system.</response>
+        /// <response code="404">User credential doesn't find by given id.</response>
+        /// <response code="500">Something going wrong on server.</response>
+        [HttpPost("refresh/{userCredentialsId}")]
+        [ProducesResponseType(type: typeof(string), statusCode: StatusCodes.Status200OK)]
+        [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status404NotFound)]
+        [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> Refresh(string userCredentialsId)
+        {
+            if (string.IsNullOrEmpty(userCredentialsId))
+                return BadRequest(new ErrorDetails()
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "User id not valid.",
+                    Details = "Incoming id is null or empty."
+                });
+
+            var userCredential = await RepositoryManager.UserCredentialRepository.GetUserCredentialAsync(userCredentialsId);
+
+            if (userCredential is null)
+                return NotFound(new ErrorDetails()
+                {
+                    StatusCode = StatusCodes.Status404NotFound,
+                    Message = "User don't exists.",
+                    Details = "There is no user with given id."
+                });
+
+            var (refreshToken, expirationTime) = await RepositoryManager.AuthenticationRepository.RegisterRefreshToken(userCredential.UserName);
+
+            return Ok(new
+            {
+                RefreshToken = refreshToken,
+                RefreshTokenExpirationTime = expirationTime
+            });
+        }
+
 
         /// <summary>
         /// Purge databse after tests.

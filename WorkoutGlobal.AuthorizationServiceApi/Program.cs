@@ -53,6 +53,8 @@ app.UseGlobalExceptionHandler();
 
 app.UseHttpsRedirection();
 
+// TODO: Check is authentication middleware is missed (just added)
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

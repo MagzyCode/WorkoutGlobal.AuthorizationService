@@ -1,10 +1,8 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using WorkoutGlobal.AuthorizationServiceApi.Contracts;
 using WorkoutGlobal.AuthorizationServiceApi.Dtos;
-using WorkoutGlobal.AuthorizationServiceApi.Filters;
 using WorkoutGlobal.AuthorizationServiceApi.Models;
 
 namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
