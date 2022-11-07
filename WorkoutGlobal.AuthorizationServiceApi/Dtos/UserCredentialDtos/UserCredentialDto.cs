@@ -16,6 +16,16 @@
         public string UserName { get; set; }
 
         /// <summary>
+        /// Salt for user password.
+        /// </summary>
+        public string PasswordSalt { get; set; }
+
+        /// <summary>
+        /// Hashed representation of the password for this user.
+        /// </summary>
+        public string PasswordHash { get; set; }
+
+        /// <summary>
         /// User email.
         /// </summary>
         public string Email { get; set; }
@@ -24,5 +34,20 @@
         /// User phone number.
         /// </summary>
         public string PhoneNumber { get; set; }
+
+        /// <summary>
+        /// Mark for deleted users.
+        /// </summary>
+        public DateTime? Deleted { get; set; }
+
+        /// <summary>
+        /// Refresh token for create access token.
+        /// </summary>
+        public string RefreshToken { get; set; }
+
+        /// <summary>
+        /// Expiration time of refresh token.
+        /// </summary>
+        public DateTime RefreshTokenExpiredDate { get; set; }
     }
 }

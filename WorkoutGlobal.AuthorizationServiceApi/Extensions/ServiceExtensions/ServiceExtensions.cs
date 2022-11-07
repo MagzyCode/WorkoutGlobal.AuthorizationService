@@ -23,6 +23,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Extensions
                 opts => opts.UseSqlServer(configuration.GetConnectionString("AuthorizationServiceConnectionString"),
                 b => b.MigrationsAssembly("WorkoutGlobal.AuthorizationServiceApi")));
 
+        // TODO: Investigate this extension
         /// <summary>
         /// Configure identity.
         /// </summary>
@@ -37,6 +38,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Extensions
                 o.Password.RequireNonAlphanumeric = false;
                 o.Password.RequiredLength = 10;
             });
+            // TODO: Check is that upper code realy apply
             builder = new IdentityBuilder(builder.UserType, typeof(IdentityRole),
                 builder.Services);
             builder.AddEntityFrameworkStores<AutorizationServiceContext>().AddDefaultTokenProviders();

@@ -44,5 +44,11 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Contracts
         /// <param name="password">User password.</param>
         /// <returns>User credentials with generated info.</returns>
         public Task<UserCredential> GenerateUserCredentialsAsync(DefaultRegistrationInfoDto defaultRegistrationInfoDto, string password);
+
+        /// <summary>
+        /// Generation of refresh token.
+        /// </summary>
+        /// <returns>Generated token.</returns>
+        public Task<(string refreshToken, DateTime expirationTime)> RegisterRefreshToken(string username);
     }
 }

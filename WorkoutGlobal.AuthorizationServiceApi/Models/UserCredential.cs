@@ -18,6 +18,16 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Models
         public DateTime? Deleted { get; set; } 
 
         /// <summary>
+        /// Refresh token for create access token.
+        /// </summary>
+        public string RefreshToken { get; set; }
+
+        /// <summary>
+        /// Expiration time of refresh token.
+        /// </summary>
+        public DateTime RefreshTokenExpiredDate { get; set; }
+
+        /// <summary>
         /// Foreign model with account user.
         /// </summary>
         public UserAccount User { get; set; }

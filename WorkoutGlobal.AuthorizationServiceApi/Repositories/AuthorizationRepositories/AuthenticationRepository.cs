@@ -169,6 +169,37 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         }
 
         /// <summary>
+        /// Generation of refresh token.
+        /// </summary>
+        /// <returns>Generated token.</returns>
+        public async Task<(string refreshToken, DateTime expirationTime)> RegisterRefreshToken(string username)
+        {
+            if (string.IsNullOrEmpty(username))
+                throw new ArgumentNullException(nameof(username), "Incoming username cannot be null or empty.");
+
+            var user = FindUserByCredentials(username);
+
+            var refreshToken = GenerateRefreshToken();
+            var expirationTime = DateTime.Now.AddDays(
+                value: double.Parse(Configuration["JwtSettings:RefreshTokenExpires"]));
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiredDate = expirationTime;
+
+            await Context.SaveChangesAsync();
+
+            return (refreshToken, expirationTime);
+        }
+
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using var randomGenerator = RandomNumberGenerator.Create();
+            randomGenerator.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+
+        /// <summary>
         /// Generation of password hash base on password and secret salt.
         /// </summary>
         /// <param name="password">User password.</param>
@@ -211,12 +242,14 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
                 new Claim(ClaimTypes.Name, userName)
             };
 
+            var expirationTimeInHours = Convert.ToDouble(jwtSettings.GetSection("Expires").Value);
+
             var tokenOptions = new JwtSecurityToken
             (
                 issuer: jwtSettings.GetSection("ValidIssuer").Value,
                 audience: jwtSettings.GetSection("ValidAudience").Value,
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(Convert.ToDouble(jwtSettings.GetSection("Expires").Value)),
+                expires: DateTime.Now.AddHours(expirationTimeInHours),
                 signingCredentials: signingCredentials
             );
 
