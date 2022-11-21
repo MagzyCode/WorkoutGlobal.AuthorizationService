@@ -37,9 +37,9 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Contracts
         /// <summary>
         /// Delete account.
         /// </summary>
-        /// <param name="deletionAccount">Deletion account.</param>
+        /// <param name="id">Deletion id.</param>
         /// <returns></returns>
-        public Task DeleteAccountAsync(UserAccount deletionAccount);
+        public Task DeleteAccountAsync(Guid id);
 
         /// <summary>
         /// Get account credential.

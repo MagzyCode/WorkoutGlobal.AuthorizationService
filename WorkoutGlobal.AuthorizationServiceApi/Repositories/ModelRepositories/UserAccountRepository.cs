@@ -8,7 +8,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
     /// <summary>
     /// Base repository for user account model.
     /// </summary>
-    public class UserAccountRepository : BaseRepository<UserAccount>, IUserAccountRepository
+    public class UserAccountRepository : BaseRepository<UserAccount, Guid>, IUserAccountRepository
     {
         /// <summary>
         /// Ctor for account repository.
@@ -41,15 +41,15 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         /// <summary>
         /// Delete account.
         /// </summary>
-        /// <param name="deletionAccount">Deletion model.</param>
+        /// <param name="id">Deletion id.</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException">Throws if incoming model is null.</exception>
-        public async Task DeleteAccountAsync(UserAccount deletionAccount)
+        public async Task DeleteAccountAsync(Guid id)
         {
-            if (deletionAccount is null)
-                throw new ArgumentNullException(nameof(deletionAccount), "Deletion model cannot be null.");
+            if (id == Guid.Empty)
+                throw new ArgumentException("Deletion model cannot be null.", nameof(id));
 
-            Delete(deletionAccount);
+            await DeleteAsync(id);
             await SaveChangesAsync();
         }
 
@@ -60,6 +60,9 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         /// <returns>Returns find model.</returns>
         public async Task<UserAccount> GetAccountAsync(Guid id)
         {
+            if (id == Guid.Empty)
+                throw new ArgumentException("Deletion model cannot be null.", nameof(id));
+
             var model = await GetModelAsync(id);
 
             return model;
@@ -72,6 +75,9 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         /// <returns>Returns account credential model.</returns>
         public async Task<UserCredential> GetAccountCredentialAsync(Guid id)
         {
+            if (id == Guid.Empty)
+                throw new ArgumentException("Deletion model cannot be null.", nameof(id));
+
             var account = await Context.UserAccounts.Where(x => x.Id == id).FirstOrDefaultAsync();
 
             var userCredential = await Context.Users.Where(x => x.Id == account.UserCredentialsId).FirstOrDefaultAsync();

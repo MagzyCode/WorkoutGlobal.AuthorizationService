@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WorkoutGlobal.AuthorizationServiceApi.DbContext;
 
@@ -11,9 +12,10 @@ using WorkoutGlobal.AuthorizationServiceApi.DbContext;
 namespace WorkoutGlobal.AuthorizationServiceApi.Migrations
 {
     [DbContext(typeof(AutorizationServiceContext))]
-    partial class AutorizationServiceContextModelSnapshot : ModelSnapshot
+    [Migration("20221118122838_CascadeDeleteMigration")]
+    partial class CascadeDeleteMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

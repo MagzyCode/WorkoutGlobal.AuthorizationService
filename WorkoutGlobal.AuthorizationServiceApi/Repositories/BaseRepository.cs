@@ -1,4 +1,5 @@
-﻿using WorkoutGlobal.AuthorizationServiceApi.Contracts;
+﻿using Microsoft.EntityFrameworkCore;
+using WorkoutGlobal.AuthorizationServiceApi.Contracts;
 using WorkoutGlobal.AuthorizationServiceApi.DbContext;
 
 namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
@@ -7,8 +8,9 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
     /// Represents base repository for all model repositories.
     /// </summary>
     /// <typeparam name="TModel">Model type.</typeparam>
-    public abstract class BaseRepository<TModel> : IBaseRepository<TModel>
-        where TModel : class
+    /// <typeparam name="TId">Id type.</typeparam>
+    public abstract class BaseRepository<TModel, TId> : IBaseRepository<TModel, TId>
+        where TModel : class, IModel<TId>
     {
         private AutorizationServiceContext _context;
         private IConfiguration _configuration;
@@ -47,27 +49,34 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         /// </summary>
         /// <param name="model">Creation model.</param>
         /// <returns>A task that represents asynchronous Create operation.</returns>
-        public async Task CreateAsync(TModel model)
+        public async Task<TId> CreateAsync(TModel model)
         {
             await Context.Set<TModel>().AddAsync(model);
+
+            return model.Id;        
         }
 
         /// <summary>
         /// Deleting model.
         /// </summary>
-        /// <param name="model">Deleting model.</param>
-        public void Delete(TModel model)
+        /// <param name="id">Deleting model id.</param>
+        public async Task DeleteAsync(TId id)
         {
+            var model = await GetModelAsync(id);
+
             Context.Set<TModel>().Remove(model);
         }
 
         /// <summary>
         /// Get all models.
         /// </summary>
+        /// <param name="trackChanges">Track changes state.</param>
         /// <returns>Collection of all models.</returns>
-        public IQueryable<TModel> GetAll()
+        public IQueryable<TModel> GetAll(bool trackChanges = true)
         {
-            var result = Context.Set<TModel>();
+            var result = trackChanges
+                ? Context.Set<TModel>()
+                : Context.Set<TModel>().AsNoTracking();
 
             return result;
         }
@@ -76,10 +85,15 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         /// Asynchronous getting of model.
         /// </summary>
         /// <param name="id">Id of getting model.</param>
+        /// <param name="trackChanges">Track changes state.</param>
         /// <returns>Single model.</returns>
-        public async Task<TModel> GetModelAsync(Guid id)
+        public async Task<TModel> GetModelAsync(TId id, bool trackChanges = true)
         {
-            var model = await Context.Set<TModel>().FindAsync(id);
+            var model = trackChanges
+                ? await Context.Set<TModel>().FindAsync(id)
+                : await Context.Set<TModel>().AsNoTracking()
+                    .Where(x => x.Id.Equals(id))
+                    .FirstOrDefaultAsync();
 
             return model;
         }
