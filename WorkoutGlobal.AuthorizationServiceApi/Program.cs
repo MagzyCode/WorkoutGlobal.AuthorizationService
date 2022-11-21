@@ -1,4 +1,5 @@
 using FluentValidation.AspNetCore;
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -43,6 +44,17 @@ builder.Services.AddAuthentication(options =>
                 builder.Configuration.GetSection("JwtSettings:Key").Value))
     };
 });
+builder.Services.ConfigureMassTransit(builder.Configuration);
+//builder.Services.AddMassTransit(options =>
+//{
+//    options.AddBus(provider => Bus.Factory.CreateUsingRabbitMq(config => {
+//        config.Host(builder.Configuration.GetSection("MassTransitSettings:Host").Value, h =>
+//        {
+//            h.Username(builder.Configuration.GetSection("MassTransitSettings:Login").Value);
+//            h.Password(builder.Configuration.GetSection("MassTransitSettings:Password").Value);
+//        });
+//    }));
+//});
 
 var app = builder.Build();
 

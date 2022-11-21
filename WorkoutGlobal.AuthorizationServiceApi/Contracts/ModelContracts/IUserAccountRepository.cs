@@ -11,14 +11,16 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Contracts
         /// Get all accounts.
         /// </summary>
         /// <returns>Returns collection of user accounts.</returns>
-        public Task<IEnumerable<UserAccount>> GetAllAccountsAsync();
+        /// <param name="trackChanges">Track changes state.</param>
+        public Task<IEnumerable<UserAccount>> GetAllAccountsAsync(bool trackChanges = true);
 
         /// <summary>
         /// Get user account by id.
         /// </summary>
         /// <param name="id">Account id.</param>
+        /// <param name="trackChanges">Track changes state.</param>
         /// <returns>Returns user account.</returns>
-        public Task<UserAccount> GetAccountAsync(Guid id);
+        public Task<UserAccount> GetAccountAsync(Guid id, bool trackChanges = true);
 
         /// <summary>
         /// Create account.
@@ -45,7 +47,8 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Contracts
         /// Get account credential.
         /// </summary>
         /// <param name="id">Account id.</param>
+        /// <param name="trackChanges">Track changes state.</param>
         /// <returns>Returns find user credential.</returns>
-        public Task<UserCredential> GetAccountCredentialAsync(Guid id);
+        public Task<UserCredential> GetAccountCredentialAsync(Guid id, bool trackChanges = true);
     }
 }

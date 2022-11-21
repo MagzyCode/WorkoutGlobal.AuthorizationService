@@ -54,16 +54,18 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         }
 
         /// <summary>
-        /// Get account by id.
+        /// Get user account by id.
         /// </summary>
         /// <param name="id">Account id.</param>
-        /// <returns>Returns find model.</returns>
-        public async Task<UserAccount> GetAccountAsync(Guid id)
+        /// <param name="trackChanges">Track changes state.</param>
+        /// <returns>Returns user account.</returns>
+        /// <exception cref="ArgumentException">Throws if account id is null.</exception>
+        public async Task<UserAccount> GetAccountAsync(Guid id, bool trackChanges = true)
         {
             if (id == Guid.Empty)
                 throw new ArgumentException("Deletion model cannot be null.", nameof(id));
 
-            var model = await GetModelAsync(id);
+            var model = await GetModelAsync(id, trackChanges);
 
             return model;
         }
@@ -72,15 +74,18 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         /// Get account credential.
         /// </summary>
         /// <param name="id">Account id.</param>
+        /// <param name="trackChanges">Track changes state.</param>
         /// <returns>Returns account credential model.</returns>
-        public async Task<UserCredential> GetAccountCredentialAsync(Guid id)
+        public async Task<UserCredential> GetAccountCredentialAsync(Guid id, bool trackChanges = true)
         {
             if (id == Guid.Empty)
                 throw new ArgumentException("Deletion model cannot be null.", nameof(id));
 
             var account = await Context.UserAccounts.Where(x => x.Id == id).FirstOrDefaultAsync();
 
-            var userCredential = await Context.Users.Where(x => x.Id == account.UserCredentialsId).FirstOrDefaultAsync();
+            var userCredential = trackChanges
+                ? await Context.Users.Where(x => x.Id == account.UserCredentialsId).FirstOrDefaultAsync()
+                : await Context.Users.AsNoTracking().Where(x => x.Id == account.UserCredentialsId).FirstOrDefaultAsync();
 
             return userCredential;
         }
@@ -88,10 +93,11 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         /// <summary>
         /// Get all accounts.
         /// </summary>
+        /// <param name="trackChanges">Track changes state.</param>
         /// <returns>Returns collection of all accounts.</returns>
-        public async Task<IEnumerable<UserAccount>> GetAllAccountsAsync()
+        public async Task<IEnumerable<UserAccount>> GetAllAccountsAsync(bool trackChanges = true)
         {
-            var models = await GetAll().ToListAsync();
+            var models = await GetAll(trackChanges).ToListAsync();
 
             return models;
         }

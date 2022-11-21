@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using WorkoutGlobal.AuthorizationServiceApi.Contracts;
 using WorkoutGlobal.AuthorizationServiceApi.Dtos;
 using WorkoutGlobal.AuthorizationServiceApi.Enums;
 using WorkoutGlobal.AuthorizationServiceApi.Models;
+using WorkoutGlobal.Shared.Messages;
 
 namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
 {
@@ -21,12 +23,15 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         /// </summary>
         /// <param name="userCredentialRepository">Credential repository.</param>
         /// <param name="mapper">Auto mapper.</param>
+        /// <param name="publisher">Publisher instanse.</param>
         public UserCredentialController(
             IUserCredentialRepository userCredentialRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IPublishEndpoint publisher)
         {
             CredentialRepository = userCredentialRepository;
             Mapper = mapper;
+            Publisher = publisher;
         }
 
         /// <summary>
@@ -38,6 +43,11 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         /// Auto mapping helper.
         /// </summary>
         public IMapper Mapper { get; private set; }
+
+        /// <summary>
+        /// Service bus.
+        /// </summary>
+        public IPublishEndpoint Publisher { get; private set; }
 
         /// <summary>
         /// Get all user credentials.
@@ -183,6 +193,9 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                 : DeleteType.Hard;
 
             await CredentialRepository.DeleteUserCredentialAsync(user, type);
+
+            await Publisher.Publish<DeleteUserMessage>(
+                message: new(credentialsId));
 
             return NoContent();
         }

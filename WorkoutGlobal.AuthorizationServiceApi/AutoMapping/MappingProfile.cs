@@ -24,7 +24,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.AutoMapping
 
             CreateMap<UserAccount, UserAccountDto>().ReverseMap();
 
-            CreateMap<UpdationUserAccountDto, UserAccountDto>();
+            CreateMap<UpdationUserAccountDto, UserAccount>();
         }
     }
 }

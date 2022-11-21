@@ -112,6 +112,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                 });
 
             var userId = await AuthenticationRepository.RegistrateUserAsync(userRegistrationDto);
+            await AuthenticationRepository.RegisterRefreshToken(userRegistrationDto.UserName);
 
             return Created($"api/userCredentials/{userId}", userId);
         }

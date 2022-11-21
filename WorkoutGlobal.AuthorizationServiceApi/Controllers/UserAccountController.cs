@@ -1,9 +1,12 @@
 ﻿using AutoMapper;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using WorkoutGlobal.AuthorizationServiceApi.Contracts;
 using WorkoutGlobal.AuthorizationServiceApi.Dtos;
+using WorkoutGlobal.AuthorizationServiceApi.Extensions;
 using WorkoutGlobal.AuthorizationServiceApi.Models;
+using WorkoutGlobal.Shared.Messages;
 
 namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
 {
@@ -20,12 +23,15 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         /// </summary>
         /// <param name="userAccountRepository">Account repository.</param>
         /// <param name="mapper">Auto mapper.</param>
+        /// <param name="publisher">Publish service.</param>
         public UserAccountController(
             IUserAccountRepository userAccountRepository,
-            IMapper mapper)
+            IMapper mapper,
+            IPublishEndpoint publisher)
         {
             AccountRepository = userAccountRepository;
             Mapper = mapper;
+            Publisher = publisher;
         }
 
         /// <summary>
@@ -37,6 +43,11 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         /// Auto mapping helper.
         /// </summary>
         public IMapper Mapper { get; private set; }
+
+        /// <summary>
+        /// Publish service.
+        /// </summary>
+        public IPublishEndpoint Publisher { get; private set; }
 
         /// <summary>
         /// Get user account by id.
@@ -96,7 +107,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                     Details = "Searchable model cannot be found because id is empty."
                 });
 
-            var user = await AccountRepository.GetAccountAsync(id);
+            var user = await AccountRepository.GetAccountAsync(id, false);
 
             if (user is null)
                 return NotFound(new ErrorDetails()
@@ -114,8 +125,15 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
 
             await AccountRepository.UpdateAccountAsync(updationUser);
 
+            if (user.IsNameChanged(updationUser))
+                await Publisher.Publish<UpdateUserMessage>(
+                    message: new(
+                        UpdationId: id,
+                        FirstName: updationUser.FirstName,
+                        LastName: updationUser.LastName,
+                        Patronymic: updationUser.Patronymic));
+
             return NoContent();
-            
         }
     }
 }
