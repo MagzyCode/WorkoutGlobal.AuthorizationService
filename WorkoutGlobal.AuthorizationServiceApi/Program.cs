@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WorkoutGlobal.AuthorizationServiceApi.Extensions;
+using WorkoutGlobal.Shared.Messages;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,16 +46,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 builder.Services.ConfigureMassTransit(builder.Configuration);
-//builder.Services.AddMassTransit(options =>
-//{
-//    options.AddBus(provider => Bus.Factory.CreateUsingRabbitMq(config => {
-//        config.Host(builder.Configuration.GetSection("MassTransitSettings:Host").Value, h =>
-//        {
-//            h.Username(builder.Configuration.GetSection("MassTransitSettings:Login").Value);
-//            h.Password(builder.Configuration.GetSection("MassTransitSettings:Password").Value);
-//        });
-//    }));
-//});
 
 var app = builder.Build();
 
@@ -65,10 +56,25 @@ app.UseGlobalExceptionHandler();
 
 app.UseHttpsRedirection();
 
-// TODO: Check is authentication middleware is missed (just added)
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+var bus = Bus.Factory.CreateUsingRabbitMq(config =>
+{
+    config.Host(builder.Configuration["MassTransitSettings:Host"]);
+
+    config.ReceiveEndpoint(builder.Configuration["MassTransitSettings:UpdateQueue"], c =>
+    {
+        c.Handler<UpdateUserMessage>(async ctx => await Console.Out.WriteLineAsync(ctx.Message.UpdationId.ToString()));
+    });
+    config.ReceiveEndpoint(builder.Configuration["MassTransitSettings:DeleteQueue"], c =>
+    {
+        c.Handler<DeleteUserMessage>(async ctx => await Console.Out.WriteLineAsync(ctx.Message.DeletionId.ToString()));
+    });
+});
+
+bus.Start();
 
 app.Run();

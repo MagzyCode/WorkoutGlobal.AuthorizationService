@@ -19,7 +19,6 @@
     <PackageReference Include="FluentValidation" Version="11.1.0" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.1.2" />
     <PackageReference Include="MassTransit" Version="8.0.8" />
-    <PackageReference Include="MassTransit.AspNetCore" Version="7.3.1" />
     <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.0.8" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.7" />
@@ -36,10 +35,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Shared messages\WorkoutGlobal.Shared\WorkoutGlobal.Shared.Messages\WorkoutGlobal.Shared.Messages.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Consumers\" />
   </ItemGroup>
 
 </Project>

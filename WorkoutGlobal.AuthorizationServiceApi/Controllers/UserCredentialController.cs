@@ -179,7 +179,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                 });
 
             var user = await CredentialRepository.GetUserCredentialAsync(credentialsId);
-
+            
             if (user is null)
                 return NotFound(new ErrorDetails()
                 {
@@ -192,10 +192,12 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                 ? deleteType
                 : DeleteType.Hard;
 
+            var deletionAccount = await CredentialRepository.GetUserCredentialAccountAsync(credentialsId);
+
             await CredentialRepository.DeleteUserCredentialAsync(user, type);
 
             await Publisher.Publish<DeleteUserMessage>(
-                message: new(credentialsId));
+                message: new(deletionAccount.Id));
 
             return NoContent();
         }

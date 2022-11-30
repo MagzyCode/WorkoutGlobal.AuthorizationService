@@ -71,15 +71,12 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Extensions
         {
             services.AddMassTransit(options =>
             {
-                options.UsingRabbitMq();
-                //options.AddBus(provider => Bus.Factory.CreateUsingRabbitMq(config => {
-                //    config.Host(configuration.GetSection("MassTransitSettings:Host").Value, h =>
-                //    {
-                //        h.Username(configuration.GetSection("MassTransitSettings:Login").Value);
-                //        h.Password(configuration.GetSection("MassTransitSettings:Password").Value);
-                //    });
-                //}));
+                options.UsingRabbitMq((ctx, cfg) =>
+                {
+                    cfg.Host(configuration["MassTransitSettings:Host"]);
+                });
             });
+            services.AddMassTransitHostedService();
         }
     }
 }
