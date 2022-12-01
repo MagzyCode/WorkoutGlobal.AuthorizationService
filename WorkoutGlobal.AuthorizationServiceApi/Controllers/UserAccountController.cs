@@ -125,8 +125,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
 
             await AccountRepository.UpdateAccountAsync(updationUser);
 
-            if (user.IsNameChanged(updationUser))
-                await Publisher.Publish<UpdateUserMessage>(
+            await Publisher.Publish<UpdateUserMessage>(
                     message: new(
                         UpdationId: id,
                         FirstName: updationUser.FirstName,
