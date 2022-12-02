@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using WorkoutGlobal.AuthorizationServiceApi.Contracts;
 
 namespace WorkoutGlobal.AuthorizationServiceApi.Models
 {
     /// <summary>
     /// Represents user credentials model.
     /// </summary>
-    public class UserCredential : IdentityUser
+    public class UserCredential : IdentityUser, IModel<string>
     {
         /// <summary>
         /// Salt for user password.

@@ -15,7 +15,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
     /// <summary>
     /// Represents authentication repository.
     /// </summary>
-    public class AuthenticationRepository : BaseRepository<UserCredential>, IAuthenticationRepository
+    public class AuthenticationRepository : BaseRepository<UserCredential, string>, IAuthenticationRepository
     {
         private UserManager<UserCredential> _userManager;
         private IMapper _mapper;

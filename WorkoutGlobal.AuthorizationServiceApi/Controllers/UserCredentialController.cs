@@ -1,9 +1,12 @@
 ﻿using AutoMapper;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using WorkoutGlobal.AuthorizationServiceApi.Contracts;
 using WorkoutGlobal.AuthorizationServiceApi.Dtos;
+using WorkoutGlobal.AuthorizationServiceApi.Enums;
 using WorkoutGlobal.AuthorizationServiceApi.Models;
+using WorkoutGlobal.Shared.Messages;
 
 namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
 {
@@ -15,39 +18,36 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
     [Produces("application/json")]
     public class UserCredentialController : ControllerBase
     {
-        private IRepositoryManager _repositoryManager;
-        private IMapper _mapper;
-
         /// <summary>
         /// Ctor for user credential controller.
         /// </summary>
-        /// <param name="repositoryManager">Repository manager.</param>
+        /// <param name="userCredentialRepository">Credential repository.</param>
         /// <param name="mapper">Auto mapper.</param>
+        /// <param name="publisher">Publisher instanse.</param>
         public UserCredentialController(
-            IRepositoryManager repositoryManager,
-            IMapper mapper)
+            IUserCredentialRepository userCredentialRepository,
+            IMapper mapper,
+            IPublishEndpoint publisher)
         {
-            _repositoryManager = repositoryManager;
-            _mapper = mapper;
+            CredentialRepository = userCredentialRepository;
+            Mapper = mapper;
+            Publisher = publisher;
         }
 
         /// <summary>
-        /// Repository manager.
+        /// Credential repository.
         /// </summary>
-        public IRepositoryManager RepositoryManager
-        {
-            get => _repositoryManager;
-            private set => _repositoryManager = value ?? throw new NullReferenceException(nameof(value));
-        }
+        public IUserCredentialRepository CredentialRepository { get; private set; }
 
         /// <summary>
         /// Auto mapping helper.
         /// </summary>
-        public IMapper Mapper
-        {
-            get => _mapper;
-            private set => _mapper = value ?? throw new NullReferenceException(nameof(value));
-        }
+        public IMapper Mapper { get; private set; }
+
+        /// <summary>
+        /// Service bus.
+        /// </summary>
+        public IPublishEndpoint Publisher { get; private set; }
 
         /// <summary>
         /// Get all user credentials.
@@ -60,7 +60,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAllUserCredentials()
         {
-            var userCredentials = await RepositoryManager.UserCredentialRepository.GetAllUserCredentialsAsync();
+            var userCredentials = await CredentialRepository.GetAllUserCredentialsAsync();
 
             var userCredentialsDto = Mapper.Map<IEnumerable<UserCredentialDto>>(userCredentials);
 
@@ -81,7 +81,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetUserCredential(string userCredentialId)
         {
-            var userCredential = await RepositoryManager.UserCredentialRepository.GetUserCredentialAsync(userCredentialId);
+            var userCredential = await CredentialRepository.GetUserCredentialAsync(userCredentialId);
 
             if (userCredential is null)
                 return NotFound(new ErrorDetails()
@@ -110,7 +110,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetUserCredentialRoles(string userCredentialId)
         {
-            var userCredential = await RepositoryManager.UserCredentialRepository.GetUserCredentialAsync(userCredentialId);
+            var userCredential = await CredentialRepository.GetUserCredentialAsync(userCredentialId);
 
             if (userCredential is null)
                 return NotFound(new ErrorDetails()
@@ -120,7 +120,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                     Details = new StackTrace().ToString()
                 });
 
-            var roles = await RepositoryManager.UserCredentialRepository.GetUserCredentialRolesAsync(userCredentialId);
+            var roles = await CredentialRepository.GetUserCredentialRolesAsync(userCredentialId);
 
             return Ok(roles);
         }
@@ -139,7 +139,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetUserCredentialAccount(string userCredentialId)
         {
-            var userCredential = await RepositoryManager.UserCredentialRepository.GetUserCredentialAsync(userCredentialId);
+            var userCredential = await CredentialRepository.GetUserCredentialAsync(userCredentialId);
 
             if (userCredential is null)
                 return NotFound(new ErrorDetails()
@@ -149,7 +149,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                     Details = new StackTrace().ToString()
                 });
 
-            var account = await RepositoryManager.UserCredentialRepository.GetUserCredentialAccountAsync(userCredentialId);
+            var account = await CredentialRepository.GetUserCredentialAccountAsync(userCredentialId);
 
             var accountDto = Mapper.Map<UserAccountDto>(account);
 
@@ -157,5 +157,49 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         }
 
 
+        /// <summary>
+        /// Delete account.
+        /// </summary>
+        /// <param name="credentialsId">Deletion id.</param>
+        /// <param name="deleteType">Deletion type.</param>
+        /// <returns></returns>
+        [ProducesResponseType(type: typeof(NoContentResult), statusCode: StatusCodes.Status204NoContent)]
+        [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status404NotFound)]
+        [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
+        [HttpDelete("{credentialsId}")]
+        public async Task<IActionResult> DeleteUserCredential(string credentialsId, DeleteType deleteType)
+        {
+            if (string.IsNullOrEmpty(credentialsId))
+                return BadRequest(new ErrorDetails()
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "Id is empty.",
+                    Details = "Searchable model cannot be found because id is empty."
+                });
+
+            var user = await CredentialRepository.GetUserCredentialAsync(credentialsId);
+            
+            if (user is null)
+                return NotFound(new ErrorDetails()
+                {
+                    StatusCode = StatusCodes.Status404NotFound,
+                    Message = "There is no user with such id.",
+                    Details = new StackTrace().ToString()
+                });
+
+            var type = Enum.IsDefined(deleteType)
+                ? deleteType
+                : DeleteType.Hard;
+
+            var deletionAccount = await CredentialRepository.GetUserCredentialAccountAsync(credentialsId);
+
+            await CredentialRepository.DeleteUserCredentialAsync(user, type);
+
+            await Publisher.Publish<DeleteUserMessage>(
+                message: new(deletionAccount.Id));
+
+            return NoContent();
+        }
     }
 }

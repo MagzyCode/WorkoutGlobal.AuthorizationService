@@ -1,18 +1,12 @@
 ﻿using WorkoutGlobal.AuthorizationServiceApi.Enums;
-using WorkoutGlobal.AuthorizationServiceApi.Contracts;
 
-namespace WorkoutGlobal.AuthorizationServiceApi.Models
+namespace WorkoutGlobal.AuthorizationServiceApi.Dtos
 {
     /// <summary>
-    /// Represents user account model.
+    /// Represents DTO model for UserAccount model for PUT actions.
     /// </summary>
-    public class UserAccount : IModel<Guid>
+    public class UpdationUserAccountDto
     {
-        /// <summary>
-        /// User account unique identifier. 
-        /// </summary>
-        public Guid Id { get; set; }
-
         /// <summary>
         /// User first name.
         /// </summary>
@@ -59,28 +53,8 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Models
         public ActivityStatus SportsActivity { get; set; }
 
         /// <summary>
-        /// Registration date for user in system. 
-        /// </summary>
-        public DateTime DateOfRegistration { get; set; } = DateTime.Now;
-
-        /// <summary>
         /// Trainer official classification number.
         /// </summary>
         public string ClassificationNumber { get; set; }
-
-        /// <summary>
-        /// Identifies whether the trainer's status has been confirmed.
-        /// </summary>
-        public bool IsStatusVerify { get; set; }
-
-        /// <summary>
-        /// Foreign key with user credentials model.
-        /// </summary>
-        public string UserCredentialsId { get; set; }
-
-        /// <summary>
-        /// Foreign model with user credentials model.
-        /// </summary>
-        public UserCredential UserCredential { get; set; }
     }
 }

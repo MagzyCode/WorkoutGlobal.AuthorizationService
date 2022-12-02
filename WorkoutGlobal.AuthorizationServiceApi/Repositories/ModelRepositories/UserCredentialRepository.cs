@@ -10,7 +10,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
     /// <summary>
     /// Base repository for user credential model.
     /// </summary>
-    public class UserCredentialRepository : BaseRepository<UserCredential>, IUserCredentialRepository
+    public class UserCredentialRepository : BaseRepository<UserCredential, string>, IUserCredentialRepository
     {
         private UserManager<UserCredential> _identityUserManager;
 
@@ -65,12 +65,15 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         }
 
         /// <summary>
-        /// Get all users credentials.
+        /// Get all user credentials.
         /// </summary>
-        /// <returns>Return collection of users credentials.</returns>
-        public async Task<IEnumerable<UserCredential>> GetAllUserCredentialsAsync()
+        /// <param name="trackChanges">Track change state.</param>
+        /// <returns>Returns collection of all user credentials.</returns>
+        public async Task<IEnumerable<UserCredential>> GetAllUserCredentialsAsync(bool trackChanges = true)
         {
-            var users = await IdentityUserManager.Users.ToListAsync();
+            var users = trackChanges
+                ? await IdentityUserManager.Users.ToListAsync()
+                : await IdentityUserManager.Users.AsNoTracking().ToListAsync();
 
             return users;
         }
@@ -79,30 +82,37 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         /// Get user credential account.
         /// </summary>
         /// <param name="id">User credential id.</param>
-        /// <returns>Returns user credential account.</returns>
-        /// <exception cref="ArgumentNullException">Throws if id is null.</exception>
-        public async Task<UserAccount> GetUserCredentialAccountAsync(string id)
+        /// <param name="trackChanges">Track change state.</param>
+        /// <returns>Returns find account.</returns>
+        public async Task<UserAccount> GetUserCredentialAccountAsync(string id, bool trackChanges = true)
         {
             if (id is null)
                 throw new ArgumentNullException(nameof(id), "Id cannot be null.");
 
-            var account = await Context.UserAccounts.Where(x => x.UserCredentialsId == id).FirstOrDefaultAsync();
+            var account = trackChanges
+                ? await Context.UserAccounts.Where(x => x.UserCredentialsId == id).FirstOrDefaultAsync()
+                : await Context.UserAccounts.AsNoTracking().Where(x => x.UserCredentialsId == id).FirstOrDefaultAsync();
 
             return account;
         }
 
         /// <summary>
-        /// Get user credential by id.
+        /// Get single user credential by id.
         /// </summary>
         /// <param name="id">User credential id.</param>
-        /// <returns>Return find user credential.</returns>
-        /// <exception cref="ArgumentNullException">Throws if id is null.</exception>
-        public Task<UserCredential> GetUserCredentialAsync(string id)
+        /// <param name="trackChanges">Track change state.</param>
+        /// <returns>Returns find user credential by given id.</returns>
+        /// <exception cref="ArgumentNullException">Throw if given id is null.</exception>
+        public async Task<UserCredential> GetUserCredentialAsync(string id, bool trackChanges = true)
         {
             if (id is null)
                 throw new ArgumentNullException(nameof(id), "Id cannot be null.");
 
-            var model = IdentityUserManager.FindByIdAsync(id);
+            var model = trackChanges
+                ? await IdentityUserManager.FindByIdAsync(id)
+                : await IdentityUserManager.Users.AsNoTracking()
+                    .Where(x => x.Id == id)
+                    .FirstOrDefaultAsync();
 
             return model;
         }
@@ -111,15 +121,20 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Repositories
         /// Get user credential by name.
         /// </summary>
         /// <param name="userName">User name.</param>
+        /// <param name="trackChanges">Track change state.</param>
         /// <returns>Return find user credential.</returns>
-        public async Task<UserCredential> GetUserCredentialByNameAsync(string userName)
+        public async Task<UserCredential> GetUserCredentialByNameAsync(string userName, bool trackChanges = true)
         {
             if (userName is null)
                 throw new ArgumentNullException(nameof(userName), "User name cannot be null.");
 
-            var model = await IdentityUserManager.Users
-                .Where(userCredentials => userCredentials.UserName == userName)
-                .FirstOrDefaultAsync();
+            var model = trackChanges
+                ? await IdentityUserManager.Users
+                    .Where(userCredentials => userCredentials.UserName == userName)
+                    .FirstOrDefaultAsync()
+                : await IdentityUserManager.Users.AsNoTracking()
+                    .Where(x => x.UserName == userName)
+                    .FirstOrDefaultAsync();
 
             return model;
         }

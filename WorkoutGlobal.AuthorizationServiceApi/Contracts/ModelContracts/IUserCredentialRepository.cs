@@ -11,22 +11,25 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Contracts
         /// <summary>
         /// Get all user credentials.
         /// </summary>
+        /// <param name="trackChanges">Track change state.</param>
         /// <returns>Returns collection of all user credentials.</returns>
-        public Task<IEnumerable<UserCredential>> GetAllUserCredentialsAsync();
+        public Task<IEnumerable<UserCredential>> GetAllUserCredentialsAsync(bool trackChanges = true);
 
         /// <summary>
         /// Get single user credential by id.
         /// </summary>
         /// <param name="id">User credential id.</param>
+        /// <param name="trackChanges">Track change state.</param>
         /// <returns>Returns find user credential by given id.</returns>
-        public Task<UserCredential> GetUserCredentialAsync(string id);
+        public Task<UserCredential> GetUserCredentialAsync(string id, bool trackChanges = true);
 
         /// <summary>
         /// Get single user credential by user name.
         /// </summary>
         /// <param name="userName">User name in system.</param>
+        /// <param name="trackChanges">Track change state.</param>
         /// <returns>Returns find user credential by given user name.</returns>
-        public Task<UserCredential> GetUserCredentialByNameAsync(string userName);
+        public Task<UserCredential> GetUserCredentialByNameAsync(string userName, bool trackChanges = true);
 
         /// <summary>
         /// Updates user credential by given model.
@@ -61,7 +64,8 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Contracts
         /// Get user credential account.
         /// </summary>
         /// <param name="id">User credential id.</param>
+        /// <param name="trackChanges">Track change state.</param>
         /// <returns>Returns find account.</returns>
-        public Task<UserAccount> GetUserCredentialAccountAsync(string id);
+        public Task<UserAccount> GetUserCredentialAccountAsync(string id, bool trackChanges = true);
     }
 }

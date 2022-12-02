@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using MassTransit;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WorkoutGlobal.AuthorizationServiceApi.Contracts;
 using WorkoutGlobal.AuthorizationServiceApi.DbContext;
@@ -59,8 +60,23 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Extensions
             services.AddScoped<IAuthenticationRepository, AuthenticationRepository>();
             services.AddScoped<IUserAccountRepository, UserAccountRepository>();
             services.AddScoped<IUserCredentialRepository, UserCredentialRepository>();
+        }
 
-            services.AddScoped<IRepositoryManager, RepositoryManager>();
+        /// <summary>
+        /// Configure MassTransit.
+        /// </summary>
+        /// <param name="services">Project services.</param>
+        /// <param name="configuration">Project configuration.</param>
+        public static void ConfigureMassTransit(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddMassTransit(options =>
+            {
+                options.UsingRabbitMq((ctx, cfg) =>
+                {
+                    cfg.Host(configuration["MassTransitSettings:Host"]);
+                });
+            });
+            services.AddMassTransitHostedService();
         }
     }
 }

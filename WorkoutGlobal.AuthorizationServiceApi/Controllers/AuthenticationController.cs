@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using WorkoutGlobal.AuthorizationServiceApi.Contracts;
 using WorkoutGlobal.AuthorizationServiceApi.Filters;
 using WorkoutGlobal.AuthorizationServiceApi.Models;
 using WorkoutGlobal.AuthorizationServiceApi.Dtos;
+using WorkoutGlobal.AuthorizationServiceApi.Contracts;
+using WorkoutGlobal.AuthorizationServiceApi.Repositories;
+using MassTransit;
+using WorkoutGlobal.Shared.Messages;
 
 namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
 {
@@ -15,25 +18,44 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
     [Produces("application/json")]
     public class AuthenticationController : ControllerBase
     {
-        private IRepositoryManager _repositoryManager;
-
         /// <summary>
         /// Ctor for authentication controller.
         /// </summary>
-        /// <param name="repositoryManager">Repository manager instance.</param>
-        public AuthenticationController(IRepositoryManager repositoryManager)
+        /// <param name="authenticationRepository">Authentication repository instance.</param>
+        /// <param name="userCredentialRepository">User credentual repository instance.</param>
+        /// <param name="userAccountRepository">User account repository instance.</param>
+        /// <param name="publisher">Publish service.</param>
+        public AuthenticationController(
+            IAuthenticationRepository authenticationRepository,
+            IUserCredentialRepository userCredentialRepository,
+            IUserAccountRepository userAccountRepository,
+            IPublishEndpoint publisher)
         {
-            RepositoryManager = repositoryManager;
+            AuthenticationRepository = authenticationRepository;
+            CredentialRepository = userCredentialRepository;
+            AccountRepository = userAccountRepository;
+            Publisher = publisher;
         }
 
         /// <summary>
-        /// Repository manager.
+        /// Publish service.
         /// </summary>
-        public IRepositoryManager RepositoryManager
-        {
-            get => _repositoryManager;
-            private set => _repositoryManager = value ?? throw new NullReferenceException(nameof(value));
-        }
+        public IPublishEndpoint Publisher { get; private set; }
+
+        /// <summary>
+        /// Authentication repository instance.
+        /// </summary>
+        public IAuthenticationRepository AuthenticationRepository { get; private set; }
+
+        /// <summary>
+        /// Authentication repository instance.
+        /// </summary>
+        public IUserCredentialRepository CredentialRepository { get; private set; }
+
+        /// <summary>
+        /// Authentication repository instance.
+        /// </summary>
+        public IUserAccountRepository AccountRepository { get; private set; }
 
         /// <summary>
         /// Authenticate user credentials.
@@ -50,9 +72,13 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Authenticate([FromBody] UserAuthorizationDto userAuthorizationDto)
         {
-            var isUserValid = await RepositoryManager.AuthenticationRepository.ValidateUserAsync(userAuthorizationDto);
+            var isUserValid = await AuthenticationRepository.ValidateUserAsync(userAuthorizationDto);
 
             if (!isUserValid)
+            {
+                await Publisher.Publish<CreateLogMessage>(
+                    message: new($"{userAuthorizationDto.UserName} cannot be authenticate with given password: {userAuthorizationDto.Password}", "Info"));
+
                 return Unauthorized(new ErrorDetails()
                 {
                     StatusCode = StatusCodes.Status401Unauthorized,
@@ -62,9 +88,11 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                         "entered data are invalid (misspell); " +
                         "entered data contains invalid syntax (validation rules were violated)."
                 });
+            }
+                
 
-            var token = RepositoryManager.AuthenticationRepository.CreateToken(userAuthorizationDto);
-            var (refreshToken, expirationTime) = await RepositoryManager.AuthenticationRepository.RegisterRefreshToken(userAuthorizationDto.UserName);
+            var token = AuthenticationRepository.CreateToken(userAuthorizationDto);
+            var (refreshToken, expirationTime) = await AuthenticationRepository.RegisterRefreshToken(userAuthorizationDto.UserName);
 
             return Ok(new
             {
@@ -89,17 +117,24 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Registrate([FromBody] UserRegistrationDto userRegistrationDto)
         {
-            var isUserExisted = RepositoryManager.AuthenticationRepository.IsUserExisted(userRegistrationDto);
+            var isUserExisted = AuthenticationRepository.IsUserExisted(userRegistrationDto);
 
             if (isUserExisted)
+            {
+                await Publisher.Publish<CreateLogMessage>(
+                    message: new($"{userRegistrationDto.UserName} already exists in system", "Info"));
+
                 return Unauthorized(new ErrorDetails()
                 {
                     StatusCode = StatusCodes.Status401Unauthorized,
                     Message = "User already exists.",
                     Details = new StackTrace().ToString()
                 });
+            }
+                
 
-            var userId = await RepositoryManager.AuthenticationRepository.RegistrateUserAsync(userRegistrationDto);
+            var userId = await AuthenticationRepository.RegistrateUserAsync(userRegistrationDto);
+            await AuthenticationRepository.RegisterRefreshToken(userRegistrationDto.UserName);
 
             return Created($"api/userCredentials/{userId}", userId);
         }
@@ -128,7 +163,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                     Details = "Incoming id is null or empty."
                 });
 
-            var userCredential = await RepositoryManager.UserCredentialRepository.GetUserCredentialAsync(userCredentialsId);
+            var userCredential = await CredentialRepository.GetUserCredentialAsync(userCredentialsId);
 
             if (userCredential is null)
                 return NotFound(new ErrorDetails()
@@ -138,7 +173,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                     Details = "There is no user with given id."
                 });
 
-            var (refreshToken, expirationTime) = await RepositoryManager.AuthenticationRepository.RegisterRefreshToken(userCredential.UserName);
+            var (refreshToken, expirationTime) = await AuthenticationRepository.RegisterRefreshToken(userCredential.UserName);
 
             return Ok(new
             {
@@ -163,7 +198,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Purge(string userCredentialsId)
         {
-            var userCredentials = await RepositoryManager.UserCredentialRepository.GetUserCredentialAsync(userCredentialsId);
+            var userCredentials = await CredentialRepository.GetUserCredentialAsync(userCredentialsId);
 
             if (userCredentials is null)
                 return NotFound(new ErrorDetails()
@@ -173,10 +208,10 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                     Details = new StackTrace().ToString()
                 });
 
-            var userAccount = await RepositoryManager.UserCredentialRepository.GetUserCredentialAccountAsync(userCredentialsId);
-            await RepositoryManager.UserAccountRepository.DeleteAccountAsync(userAccount);
+            var userAccount = await CredentialRepository.GetUserCredentialAccountAsync(userCredentialsId);
+            await AccountRepository.DeleteAccountAsync(userAccount.Id);
 
-            await RepositoryManager.UserCredentialRepository.DeleteUserCredentialAsync(userCredentials);
+            await CredentialRepository.DeleteUserCredentialAsync(userCredentials);
 
             return NoContent();
         }

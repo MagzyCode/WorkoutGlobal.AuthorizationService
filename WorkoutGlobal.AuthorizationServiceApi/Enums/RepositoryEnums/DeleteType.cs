@@ -11,7 +11,7 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Enums
         /// Deleting record in database.
         /// </summary>
         [Description("Deleting record in database.")]
-        Hard,
+        Hard = 1,
         /// <summary>
         /// Mark as deleted in database.
         /// </summary>

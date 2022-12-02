@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using MassTransit;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 using WorkoutGlobal.AuthorizationServiceApi.Contracts;
 using WorkoutGlobal.AuthorizationServiceApi.Dtos;
+using WorkoutGlobal.AuthorizationServiceApi.Extensions;
 using WorkoutGlobal.AuthorizationServiceApi.Models;
+using WorkoutGlobal.Shared.Messages;
 
 namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
 {
@@ -16,39 +18,36 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
     [Produces("application/json")]
     public class UserAccountController : ControllerBase
     {
-        private IRepositoryManager _repositoryManager;
-        private IMapper _mapper;
-
         /// <summary>
         /// Ctor for user accounts controller.
         /// </summary>
-        /// <param name="repositoryManager">Repository manager.</param>
+        /// <param name="userAccountRepository">Account repository.</param>
         /// <param name="mapper">Auto mapper.</param>
+        /// <param name="publisher">Publish service.</param>
         public UserAccountController(
-            IRepositoryManager repositoryManager,
-            IMapper mapper)
+            IUserAccountRepository userAccountRepository,
+            IMapper mapper,
+            IPublishEndpoint publisher)
         {
-            _repositoryManager = repositoryManager;
-            _mapper = mapper;
+            AccountRepository = userAccountRepository;
+            Mapper = mapper;
+            Publisher = publisher;
         }
 
         /// <summary>
-        /// Repository manager.
+        /// Account repository.
         /// </summary>
-        public IRepositoryManager RepositoryManager
-        {
-            get => _repositoryManager;
-            private set => _repositoryManager = value ?? throw new NullReferenceException(nameof(value));
-        }
+        public IUserAccountRepository AccountRepository { get; private set; }
 
         /// <summary>
         /// Auto mapping helper.
         /// </summary>
-        public IMapper Mapper
-        {
-            get => _mapper;
-            private set => _mapper = value ?? throw new NullReferenceException(nameof(value));
-        }
+        public IMapper Mapper { get; private set; }
+
+        /// <summary>
+        /// Publish service.
+        /// </summary>
+        public IPublishEndpoint Publisher { get; private set; }
 
         /// <summary>
         /// Get user account by id.
@@ -64,7 +63,15 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetUserAccount(Guid accountId)
         {
-            var user = await RepositoryManager.UserAccountRepository.GetAccountAsync(accountId);
+            if (accountId == Guid.Empty)
+                return BadRequest(new ErrorDetails()
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "Id is empty.",
+                    Details = "Searchable model cannot be found because id is empty."
+                });
+
+            var user = await AccountRepository.GetAccountAsync(accountId);
 
             if (user is null)
                 return NotFound(new ErrorDetails()
@@ -77,6 +84,55 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
             var userAccountDto = Mapper.Map<UserAccountDto>(user);
 
             return Ok(userAccountDto);
+        }
+
+        /// <summary>
+        /// Update user account.
+        /// </summary>
+        /// <param name="id">User account id.</param>
+        /// <param name="updationUserAccountDto">Updation model.</param>
+        /// <returns></returns>
+        [ProducesResponseType(type: typeof(NoContentResult), statusCode: StatusCodes.Status204NoContent)]
+        [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status404NotFound)]
+        [ProducesResponseType(type: typeof(ErrorDetails), statusCode: StatusCodes.Status500InternalServerError)]
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateUserAccount(Guid id, [FromBody] UpdationUserAccountDto updationUserAccountDto)
+        {
+            if (id == Guid.Empty)
+                return BadRequest(new ErrorDetails()
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Message = "Id is empty.",
+                    Details = "Searchable model cannot be found because id is empty."
+                });
+
+            var user = await AccountRepository.GetAccountAsync(id, false);
+
+            if (user is null)
+                return NotFound(new ErrorDetails()
+                {
+                    StatusCode = StatusCodes.Status404NotFound,
+                    Message = "There is no user with such id.",
+                    Details = new StackTrace().ToString()
+                });
+
+            var updationUser = Mapper.Map<UserAccount>(updationUserAccountDto);
+
+            updationUser.Id = id;
+            updationUser.DateOfRegistration = user.DateOfRegistration;
+            updationUser.IsStatusVerify = user.IsStatusVerify;
+
+            await AccountRepository.UpdateAccountAsync(updationUser);
+
+            await Publisher.Publish<UpdateUserMessage>(
+                    message: new(
+                        UpdationId: id,
+                        FirstName: updationUser.FirstName,
+                        LastName: updationUser.LastName,
+                        Patronymic: updationUser.Patronymic));
+
+            return NoContent();
         }
     }
 }

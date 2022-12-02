@@ -40,7 +40,8 @@ namespace WorkoutGlobal.AuthorizationServiceApi.DbContext
             modelBuilder.Entity<UserCredential>()
                 .HasOne(userCredentials => userCredentials.User)
                 .WithOne(user => user.UserCredential)
-                .HasForeignKey<UserAccount>(userCredentials => userCredentials.UserCredentialsId);
+                .HasForeignKey<UserAccount>(userCredentials => userCredentials.UserCredentialsId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             #endregion
         }
