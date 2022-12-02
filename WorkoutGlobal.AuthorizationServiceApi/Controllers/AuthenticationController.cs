@@ -5,6 +5,8 @@ using WorkoutGlobal.AuthorizationServiceApi.Models;
 using WorkoutGlobal.AuthorizationServiceApi.Dtos;
 using WorkoutGlobal.AuthorizationServiceApi.Contracts;
 using WorkoutGlobal.AuthorizationServiceApi.Repositories;
+using MassTransit;
+using WorkoutGlobal.Shared.Messages;
 
 namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
 {
@@ -22,15 +24,23 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
         /// <param name="authenticationRepository">Authentication repository instance.</param>
         /// <param name="userCredentialRepository">User credentual repository instance.</param>
         /// <param name="userAccountRepository">User account repository instance.</param>
+        /// <param name="publisher">Publish service.</param>
         public AuthenticationController(
             IAuthenticationRepository authenticationRepository,
             IUserCredentialRepository userCredentialRepository,
-            IUserAccountRepository userAccountRepository)
+            IUserAccountRepository userAccountRepository,
+            IPublishEndpoint publisher)
         {
             AuthenticationRepository = authenticationRepository;
             CredentialRepository = userCredentialRepository;
             AccountRepository = userAccountRepository;
+            Publisher = publisher;
         }
+
+        /// <summary>
+        /// Publish service.
+        /// </summary>
+        public IPublishEndpoint Publisher { get; private set; }
 
         /// <summary>
         /// Authentication repository instance.
@@ -65,6 +75,10 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
             var isUserValid = await AuthenticationRepository.ValidateUserAsync(userAuthorizationDto);
 
             if (!isUserValid)
+            {
+                await Publisher.Publish<CreateLogMessage>(
+                    message: new($"{userAuthorizationDto.UserName} cannot be authenticate with given password: {userAuthorizationDto.Password}", "Info"));
+
                 return Unauthorized(new ErrorDetails()
                 {
                     StatusCode = StatusCodes.Status401Unauthorized,
@@ -74,6 +88,8 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
                         "entered data are invalid (misspell); " +
                         "entered data contains invalid syntax (validation rules were violated)."
                 });
+            }
+                
 
             var token = AuthenticationRepository.CreateToken(userAuthorizationDto);
             var (refreshToken, expirationTime) = await AuthenticationRepository.RegisterRefreshToken(userAuthorizationDto.UserName);
@@ -104,12 +120,18 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Controllers
             var isUserExisted = AuthenticationRepository.IsUserExisted(userRegistrationDto);
 
             if (isUserExisted)
+            {
+                await Publisher.Publish<CreateLogMessage>(
+                    message: new($"{userRegistrationDto.UserName} already exists in system", "Info"));
+
                 return Unauthorized(new ErrorDetails()
                 {
                     StatusCode = StatusCodes.Status401Unauthorized,
                     Message = "User already exists.",
                     Details = new StackTrace().ToString()
                 });
+            }
+                
 
             var userId = await AuthenticationRepository.RegistrateUserAsync(userRegistrationDto);
             await AuthenticationRepository.RegisterRefreshToken(userRegistrationDto.UserName);

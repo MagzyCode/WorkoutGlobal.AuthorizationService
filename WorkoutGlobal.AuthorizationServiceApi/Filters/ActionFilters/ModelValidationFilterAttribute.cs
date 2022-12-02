@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using MassTransit;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using System.Text;
 using WorkoutGlobal.AuthorizationServiceApi.Models;
@@ -29,12 +30,15 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Filters
                 .SingleOrDefault(x => x.Value.ToString().Contains("Dto")).Value;
 
             if (dtoParam is null)
+            {
                 context.Result = new BadRequestObjectResult(new ErrorDetails()
                 {
                     StatusCode = StatusCodes.Status400BadRequest,
                     Message = "Incoming DTO model in null.",
                     Details = "Incoming DTO model not contain any value."
                 });
+            }
+                
 
             if (!context.ModelState.IsValid)
             {
