@@ -67,16 +67,31 @@ namespace WorkoutGlobal.AuthorizationServiceApi.Extensions
         /// </summary>
         /// <param name="services">Project services.</param>
         /// <param name="configuration">Project configuration.</param>
-        public static void ConfigureMassTransit(this IServiceCollection services, IConfiguration configuration)
+        /// <param name="bus">Message broker type.</param>
+        public static void ConfigureMassTransit(this IServiceCollection services, IConfiguration configuration, Enums.Bus bus)
         {
             services.AddMassTransit(options =>
             {
-                options.UsingRabbitMq((ctx, cfg) =>
+                switch (bus)
                 {
-                    cfg.Host(configuration["MassTransitSettings:Host"]);
-                });
+                    case Enums.Bus.RabbitMQ:
+                        options.UsingRabbitMq((ctx, cfg) =>
+                        {
+                            cfg.Host(configuration["MassTransitSettings:Hosts:RabbitMQHost"]);
+
+                            cfg.ConfigureEndpoints(ctx);
+                        });
+                        break;
+                    case Enums.Bus.AzureServiceBus:
+                        options.UsingAzureServiceBus((context, configurator) =>
+                        {
+                            configurator.Host(configuration["MassTransitSettings:Hosts:AzureSBHost"]);
+
+                            configurator.ConfigureEndpoints(context);
+                        });
+                        break;
+                }
             });
-            services.AddMassTransitHostedService();
         }
     }
 }

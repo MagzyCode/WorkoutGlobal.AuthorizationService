@@ -2,6 +2,7 @@ using FluentValidation.AspNetCore;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using WorkoutGlobal.AuthorizationServiceApi.Extensions;
@@ -45,7 +46,9 @@ builder.Services.AddAuthentication(options =>
                 builder.Configuration.GetSection("JwtSettings:Key").Value))
     };
 });
-builder.Services.ConfigureMassTransit(builder.Configuration);
+
+var busType = Enum.Parse<WorkoutGlobal.AuthorizationServiceApi.Enums.Bus>(builder.Configuration["MassTransitSettings:Bus"]);
+builder.Services.ConfigureMassTransit(builder.Configuration, busType);
 
 var app = builder.Build();
 
@@ -61,20 +64,20 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-var bus = Bus.Factory.CreateUsingRabbitMq(config =>
+switch (busType)
 {
-    config.Host(builder.Configuration["MassTransitSettings:Host"]);
-
-    config.ReceiveEndpoint(builder.Configuration["MassTransitSettings:UpdateQueue"], c =>
-    {
-        c.Handler<UpdateUserMessage>(async ctx => await Console.Out.WriteLineAsync(ctx.Message.UpdationId.ToString()));
-    });
-    config.ReceiveEndpoint(builder.Configuration["MassTransitSettings:DeleteQueue"], c =>
-    {
-        c.Handler<DeleteUserMessage>(async ctx => await Console.Out.WriteLineAsync(ctx.Message.DeletionId.ToString()));
-    });
-});
-
-bus.Start();
+    case WorkoutGlobal.AuthorizationServiceApi.Enums.Bus.RabbitMQ:
+        Bus.Factory.CreateUsingRabbitMq(config =>
+        {
+            config.Host(builder.Configuration["MassTransitSettings:Hosts:RabbitMQHost"]);
+        }).Start();
+        break;
+    case WorkoutGlobal.AuthorizationServiceApi.Enums.Bus.AzureServiceBus:
+        Bus.Factory.CreateUsingAzureServiceBus(config =>
+        {
+            config.Host(builder.Configuration["MassTransitSettings:Hosts:AzureSBHost"]);
+        }).Start();
+        break;
+}
 
 app.Run();
